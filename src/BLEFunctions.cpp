@@ -1,6 +1,6 @@
 #include "BLEFunctions.h"
-#include <Arduino_BMI270_BMM150.h>
 #include "Led.h"
+#include "Sensors.h"
 BLEService sensorService(SERVICE_UUID);
 BLECharacteristic dataChar(DATA_CHAR_UUID, BLERead | BLEWrite | BLENotify, PACKET_SIZE);
 
@@ -22,12 +22,13 @@ void runBLEService() {
     while(central.connected()) {
         float data[BUFFER_SIZE][READINGS_PER_SAMPLE];
         for(int i = 0; i < BUFFER_SIZE; i++) {
-            data[i][0] = 100.0f;
-            data[i][1] = 110.0f;
-            data[i][2] = 120.0f;
-            data[i][3] = 10.0f;
-            data[i][4] = 20.0f;
-            data[i][5] = 30.0f;
+            imu.getEvent(&acc, &gyro, &temp);
+            data[i][0] = acc.acceleration.x;
+            data[i][1] = acc.acceleration.y;
+            data[i][2] = acc.acceleration.z;
+            data[i][3] = gyro.gyro.x;
+            data[i][4] = gyro.gyro.y;
+            data[i][5] = gyro.gyro.z;
             delay(READINGS_DELAY);
         }
         dataChar.writeValue(data, sizeof(data));
