@@ -1,11 +1,12 @@
 #include "BLEFunctions.h"
-
+#include <Arduino_BMI270_BMM150.h>
+#include "Led.h"
 BLEService sensorService(SERVICE_UUID);
 BLECharacteristic dataChar(DATA_CHAR_UUID, BLERead | BLEWrite | BLENotify, PACKET_SIZE);
 
 void setupBLE() {
     if(!BLE.begin()) {
-        exit(1);
+        setRedLED();
     }
 
     BLE.setLocalName("Nano33BLE"); // Set name to Nano33BLE
@@ -19,14 +20,19 @@ void setupBLE() {
 void runBLEService() {
     BLEDevice central = BLE.central();
     while(central.connected()) {
-        float data[BUFFER_SIZE][SAMPLES_PER_READING];
+        float data[BUFFER_SIZE][READINGS_PER_SAMPLE];
         for(int i = 0; i < BUFFER_SIZE; i++) {
             data[i][0] = 100.0f;
             data[i][1] = 110.0f;
             data[i][2] = 120.0f;
+            data[i][3] = 10.0f;
+            data[i][4] = 20.0f;
+            data[i][5] = 30.0f;
+            delay(READINGS_DELAY);
         }
         dataChar.writeValue(data, sizeof(data));
     }
     BLE.advertise();
+    setYellowLED();
     delay(1000);
 }
