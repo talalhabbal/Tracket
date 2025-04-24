@@ -4,9 +4,11 @@ sensors_event_t acc;
 sensors_event_t gyro;
 sensors_event_t temp;
 
+/// @brief Initialization of the adafruit LSM6DSO32 imu.
+/// Range and datarate of accelerometer and gyroscope are initialized here
+/// @return returns 1 if I2C set up fails.
 void init_sensor() {
     if(!imu.begin_I2C()) {
-        Serial.println("Failed to find chip...");
         // Add LED code to turn red if an error occurred.
     }
 

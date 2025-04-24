@@ -3,7 +3,10 @@
 #include "Sensors.h"
 BLEService sensorService(SERVICE_UUID);
 BLECharacteristic dataChar(DATA_CHAR_UUID, BLERead | BLEWrite | BLENotify, PACKET_SIZE);
-
+/// @brief Set up initial bluetooth connection. This function sets the name of the bluetooth when advertising
+/// and adds the characteristics to the bluetooth service. Bluetooth then adds that service with the
+/// attached  characteristics to be advertised. A connection interval of 5-7.5ms is specified. The BLE then starts
+/// advertising.
 void setupBLE() {
     if(!BLE.begin()) {
         setRedLED();
@@ -17,6 +20,9 @@ void setupBLE() {
     BLE.advertise(); // Start advertising
 }
 
+/// @brief Runs the BLE communication. A central connection is created and while it is connected,
+/// The sensor readings are taken and stored in a buffer to be transmitted over BLE to the peripheral device.
+/// If the connection drops at any point, the BLE service starts advertising again.
 void runBLEService() {
     BLEDevice central = BLE.central();
     while(central.connected()) {
