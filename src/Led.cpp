@@ -11,7 +11,6 @@ void init_led() {
 }
 /// @brief Turn the LED red
 void setRedLED() {
-    """"
     analogWrite(RED_PIN, 255);
     analogWrite(GREEN_PIN, 0);
     analogWrite(BLUE_PIN, 0);
