@@ -1,17 +1,24 @@
 #include "BLEFunctions.h"
-#include "Led.h"
-#include "Sensors.h"
+#include "Sensor.h"
+
 BLEService sensorService(SERVICE_UUID);
 BLECharacteristic dataChar(DATA_CHAR_UUID, BLERead | BLEWrite | BLENotify, PACKET_SIZE);
+
+float dataBuffer1[BUFFER_SIZE][READINGS_PER_SAMPLE];
+float dataBuffer2[BUFFER_SIZE][READINGS_PER_SAMPLE];
+
+float(*currentBuffer)[READINGS_PER_SAMPLE] = dataBuffer1;
+float(*sendBuffer)[READINGS_PER_SAMPLE] = dataBuffer2;
+
+int sendBufferSize = 0;
+
 /// @brief Set up initial bluetooth connection. This function sets the name of the bluetooth when advertising
 /// and adds the characteristics to the bluetooth service. Bluetooth then adds that service with the
 /// attached  characteristics to be advertised. A connection interval of 5-7.5ms is specified. The BLE then starts
 /// advertising.
 void setupBLE() {
     if(!BLE.begin()) {
-        setRedLED();
     }
-
     BLE.setLocalName("Nano33BLE"); // Set name to Nano33BLE
     sensorService.addCharacteristic(dataChar); // Add Characteristic to service
     BLE.addService(sensorService); // Add service to BLE
@@ -25,21 +32,39 @@ void setupBLE() {
 /// If the connection drops at any point, the BLE service starts advertising again.
 void runBLEService() {
     BLEDevice central = BLE.central();
+    unsigned long startTime = millis();
+    unsigned long timeout = 15000;
+    while (central.connected() && !dataChar.subscribed() && millis() - startTime < timeout) {
+        delay(10);  // Let BLE stack finish GATT negotiation
+    }
     while(central.connected()) {
-        float data[BUFFER_SIZE][READINGS_PER_SAMPLE];
-        for(int i = 0; i < BUFFER_SIZE; i++) {
-            imu.getEvent(&acc, &gyro, &temp);
-            data[i][0] = acc.acceleration.x;
-            data[i][1] = acc.acceleration.y;
-            data[i][2] = acc.acceleration.z;
-            data[i][3] = gyro.gyro.x;
-            data[i][4] = gyro.gyro.y;
-            data[i][5] = gyro.gyro.z;
-            delay(READINGS_DELAY);
+        int i = 0;
+        while(i < BUFFER_SIZE) {
+            if(isDataReady()) {
+                IMUData data;
+                if(readIMU(&data)) {
+                    currentBuffer[i][0] = data.ax;
+                    currentBuffer[i][1] = data.ay;
+                    currentBuffer[i][2] = data.az;
+                    currentBuffer[i][3] = data.gx;
+                    currentBuffer[i][4] = data.gy;
+                    currentBuffer[i][5] = data.gz;
+                    i++;
+                }
+            }
         }
-        dataChar.writeValue(data, sizeof(data));
+
+        float(*temp)[READINGS_PER_SAMPLE] = currentBuffer;
+        currentBuffer = sendBuffer;
+        sendBuffer = temp;
+        sendBufferSize = i;
+
+        if(sendBufferSize > 0) {
+            dataChar.writeValue(sendBuffer, PACKET_SIZE);
+            sendBufferSize = 0;
+            delay(3);
+        }
     }
     BLE.advertise();
-    setYellowLED();
     delay(1000);
 }
