@@ -2,13 +2,13 @@
 
 void initSensor() {
     Wire.begin();
-    // Wire.setClock(400000);
+    Wire.setClock(400000);
 
-    Wire.beginTransmission(LSM6DSO32_ADDR);
-    Wire.write(CTRL_3_C);
-    Wire.write(0x01);
-    Wire.endTransmission();
-    delay(100);
+    // Wire.beginTransmission(LSM6DSO32_ADDR);
+    // Wire.write(CTRL_3_C);
+    // Wire.write(0x01);
+    // Wire.endTransmission();
+    // delay(100);
 
     Wire.beginTransmission(LSM6DSO32_ADDR);
     Wire.write(CTRL1_XL);
